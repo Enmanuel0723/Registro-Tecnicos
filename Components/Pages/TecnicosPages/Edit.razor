@@ -1,0 +1,93 @@
+﻿﻿@page "/Tecnicos/Edit/{TecnicoId:int}"
+@inject ToastService Toast
+@inject TecnicosService tecnicosService
+@inject NavigationManager navigation
+@rendermode InteractiveServer
+
+
+<PageTitle>Agregar Técnico</PageTitle>
+<EditForm Model="tecnicoModificado" OnValidSubmit="ModificarTecnico">
+    <DataAnnotationsValidator />
+    <div class="container">
+        <div class="card shadow">
+            <div class="card-header text-center bg-primary text-white">
+                <h4>Registrar Nuevo Técnico</h4>
+            </div>
+
+            <div class="card-body">
+                <!-- Campo: TecnicoId -->
+                <div class="form-group">
+                    <label for="tecnicoId"><strong>ID del Técnico</strong></label>
+                    <InputNumber id="tecnicoId" class="form-control" @bind-Value="tecnicoModificado.TecnicoId" readonly />
+                    <ValidationMessage For="@(() => tecnicoModificado.TecnicoId)" />
+                </div>
+
+                <!-- Campo: Nombre -->
+                <div class="form-group">
+                    <label for="nombre"><strong>Nombre del Técnico</strong></label>
+                    <InputText id="nombre" class="form-control" @bind-Value="tecnicoModificado.Nombres" />
+                    <ValidationMessage For="@(() => tecnicoModificado.Nombres)" />
+                </div>
+
+                <!-- Campo: Sueldo -->
+                <div class="form-group">
+                    <label for="sueldoHora"><strong>Sueldo por Hora</strong></label>
+                    <InputNumber id="sueldoHora" class="form-control" @bind-Value="tecnicoModificado.SueldoHora" />
+                    <ValidationMessage For="@(() => tecnicoModificado.SueldoHora)" />
+                </div>
+            </div>
+
+            <div class="card-footer text-center">
+                <button type="submit" class="btn btn-success ml-2">Registrar</button>
+                <a href="/Tecnicos/Index" class="btn btn-danger ml-2">Volver</a>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+
+@code {
+    [Parameter]
+    public int TecnicoId { get; set; }
+    public Tecnicos tecnicoModificado { get; set; } = new Tecnicos();
+    public bool NombreRepetido { get; set; }
+    public List<Tecnicos> List { get; set; } = new List<Tecnicos>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TecnicoId > 0)
+        {
+            tecnicoModificado = await tecnicosService.Buscar(TecnicoId);
+        }
+       
+
+    }
+
+
+    public async Task<bool> Validar()
+    {
+        var existeTecnico = await tecnicosService.BuscarNombres(tecnicoModificado.Nombres);
+
+        NombreRepetido = existeTecnico != null;
+        return NombreRepetido;
+    }
+
+
+
+    public async Task ModificarTecnico()
+    {
+        if (!await Validar())
+        {
+            await tecnicosService.Guardar(tecnicoModificado);
+
+            Toast.Notify(new(ToastType.Success, "Modificado con exito!", "El tecnico se ha modificado"));
+            navigation.NavigateTo("/Tecnicos/Index");
+        }
+        else
+        {
+            Toast.Notify(new(ToastType.Danger, "Error al modificar el tecnico", "Ese nombre ya esta registrado."));
+        }
+    }
+
+}
