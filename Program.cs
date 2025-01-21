@@ -1,36 +1,43 @@
 using Registro_Tecnicos.Components;
+using Registro_Tecnicos.DAL;
+using Registro_Tecnicos.Models;
+using Microsoft.EntityFrameworkCore;
+using Registro_Tecnicos.Services;
+using BlazorBootstrap;
 
-namespace Registro_Tecnicos
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
+//Obtenemos el constructor para usarlo en el contexto.
+var ConStr = builder.Configuration.GetConnectionString("SqlConStr");
+
+//Agregamos el contexto al builder con el ConStr.
+builder.Services.AddDbContextFactory<Context>(Options => Options.UseSqlServer(ConStr));
+builder.Services.AddBlazorBootstrap();
+
+//Inyeccion del service.
+builder.Services.AddScoped<TecnicosService>();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-            builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseAntiforgery();
-
-            app.MapStaticAssets();
-            app.MapRazorComponents<App>()
-                .AddInteractiveServerRenderMode();
-
-            app.Run();
-        }
-    }
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
 }
+
+app.UseHttpsRedirection();
+
+
+app.UseAntiforgery();
+
+app.MapStaticAssets();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+
+app.Run();
