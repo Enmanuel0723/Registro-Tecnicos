@@ -9,7 +9,7 @@
     <DataAnnotationsValidator />
     <div class="container">
         <div class="card shadow">
-            <div class="card-header text-center bg-danger text-white">
+            <div class="card-header text-center bg-info text-white">
                 <h4>Registrar Nuevo Técnico</h4>
             </div>
 
@@ -61,7 +61,7 @@
         var nombreDuplicado = await tecnicosService.BuscarNombres(nuevoTecnico.Nombres);
         if (nombreDuplicado != null)
         {
-            ToastService.Notify(new(ToastType.Warning, "El nombre del técnico ya está registrado", " Por favor, utiliza un nombre diferente."));
+            ToastService.Notify(new(ToastType.Secondary, "El nombre del técnico ya está registrado", " Por favor, utiliza un nombre diferente."));
 
             return false;
         }
@@ -79,7 +79,7 @@
     {
         if (await Validar())
         {
-            ToastService.Notify(new(ToastType.Primary, "Técnico registrado exitosamente.", "Se ha guardado el tecnico."));
+            ToastService.Notify(new(ToastType.Success, "Técnico registrado exitosamente.", "Se ha guardado el tecnico."));
             await tecnicosService.Guardar(nuevoTecnico);
             await Task.Delay(4000);
             nuevoTecnico = new Tecnicos();
