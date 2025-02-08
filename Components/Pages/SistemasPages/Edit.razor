@@ -1,114 +1,90 @@
-﻿@page "/Sistemas/Index"
+﻿@page "/Sistemas/Edit/{SistemaId:int}"
+@inject ToastService Toast
 @inject SistemasService sistemasService
 @inject NavigationManager navigation
 @rendermode InteractiveServer
 
-<PageTitle>Sistemas</PageTitle>
-<div class="container">
-    <div class="card shadow-lg">
-        <div class="card-header bg-warning text-dark">
-            <h3 class="bi bi-person-fill"><strong> Registro de sistemas</strong></h3>
-        </div>
-        <div class="row text-left">
-            <div class="col-md-3">
-                <label for="filtro" class="form-label"><strong>Filtrar por:</strong></label>
-                <InputSelect id="filtro" class="form-select" @bind-Value="filtro">
-                    <option value="id">ID</option>
-                    <option value="Descripcion">Descripcion</option>
-                    <option value="Complejidad">Complejidad</option>
-                </InputSelect>
+<PageTitle>Editar Sistema</PageTitle>
+<EditForm Model="sistemaModificado" OnValidSubmit="ModificarSistema">
+    <DataAnnotationsValidator />
+    <div class="container">
+        <div class="card shadow">
+            <div class="card-header text-center bg-danger text-white">
+                <h4>Editar sistema</h4>
             </div>
-            <div class="col-md-6">
-                <label for="valorFiltro" class="form-label"><strong>B&uacute;squeda:</strong></label>
-                <div class="input-group">
-                    <InputText id="valorFiltro" @bind-Value="valorFiltro" class="form-control" placeholder="Buscar" />
-                    <button @onclick="Buscar" class="btn btn-warning bi bi-search" type="button"> Buscar</button>
+
+            <div class="card-body">
+                <!-- Campo: SistemaId -->
+                <div class="form-group">
+                    <label for="sistemaId"><strong>ID del sistema</strong></label>
+                    <InputNumber id="sistemaId" class="form-control" @bind-Value="sistemaModificado.SistemaId" readonly />
+                    <ValidationMessage For="@(() => sistemaModificado.SistemaId)" />
+                </div>
+
+                <!-- Campo: Descripcion -->
+                <div class="form-group">
+                    <label for="descripcion"><strong>Descripcion del sistema</strong></label>
+                    <InputText id="descripcion" class="form-control" @bind-Value="sistemaModificado.Descripcion" />
+                    <ValidationMessage For="@(() => sistemaModificado.Descripcion)" />
+                </div>
+
+                <!-- Campo: Complejidad -->
+                <div class="form-group">
+                    <label for="complejidad"><strong>Complejidad</strong></label>
+                    <InputNumber id="complejidad" class="form-control" @bind-Value="sistemaModificado.Complejidad" />
+                    <ValidationMessage For="@(() => sistemaModificado.Complejidad)" />
                 </div>
             </div>
 
-
-            <div class="col-md-3 d-flex align-items-center justify-content-end">
-                <a href="/Sistemas/Create" class="btn btn-warning btn-sm d-flex align-items-center px-3 py-2">
-                    <i class="bi bi-plus-square-fill me-1"></i> Crear
-                </a>
-            </div>
-
-
-            <div class="col-1">
-                <button type="button" class="btn btn-outline-secondary bi bi-arrow-counterclockwise"
-                        @onclick="Restablecer">
-                </button>
-            </div>
-
-
-            <div class="card-body">
-                <table class="table table-light">
-                    <thead class="table table-striped text-center table-bordered mt-3 bg-dark text-white">
-                        <tr>
-                            <th>ID</th>
-                            <th>Descripcion</th>
-                            <th>Complejidad</th>
-                            <th>Modificar</th>
-                            <th>Eliminar</th>
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var Sistemas in sistemas)
-                        {
-                            <tr>
-                                <td class="text-center">@Sistemas.SistemaId</td>
-                                <td class="text-center">@Sistemas.Descripcion</td>
-                                <td class="text-center">@Sistemas.Complejidad</td>
-
-                                <td class="text-center">
-                                    <a href="/Sistemas/Edit/@Sistemas.SistemaId" class="btn btn-secondary text-white bi bi-pencil-fill"></a>
-                                </td>
-                                <td class="text-center">
-                                    <a href="/Sistemas/Delete/@Sistemas.SistemaId" class="btn btn-danger bi bi-trash2-fill"></a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+            <div class="card-footer text-center">
+                <button type="submit" class="btn btn-success ml-2">Registrar</button>
+                <a href="/Sistemas/Index" class="btn btn-danger ml-2">Volver</a>
             </div>
         </div>
     </div>
-</div>
+</EditForm>
+
 @code {
-    public List<Sistemas> sistemas = new List<Sistemas>();
-    private string filtro = "";
-    private string valorFiltro = "";
+    [Parameter]
+    public int SistemaId { get; set; }
+    public Sistemas sistemaModificado { get; set; } = new Sistemas();
+    public bool sistemaRepetido { get; set; }
+    public List<Sistemas> List { get; set; } = new List<Sistemas>();
+
 
     protected override async Task OnInitializedAsync()
     {
-        sistemas = await sistemasService.Listar(t => true);
+        if (SistemaId > 0)
+        {
+            sistemaModificado = await sistemasService.Buscar(SistemaId);
+        }
+
+
     }
 
-    private async Task Buscar()
-    {
-        if (!string.IsNullOrWhiteSpace(valorFiltro))
-        {
-            string filtroLower = filtro.ToLower();
-            string valorFiltroLower = valorFiltro.ToLower();
 
-            sistemas = await sistemasService.Listar(t =>
-                (filtroLower == "id" && t.SistemaId.ToString().Contains(valorFiltro)) ||
-                (filtroLower == "descripcion" && t.Descripcion.ToLower().Contains(valorFiltroLower)) ||
-                (filtroLower == "complejidad" && t.Complejidad.ToString().Contains(valorFiltro))
-            );
+    public async Task<bool> Validar()
+    {
+        var existeTecnico = await sistemasService.BuscarDescripcion(sistemaModificado.Descripcion);
+
+        sistemaRepetido = existeTecnico != null;
+        return sistemaRepetido;
+    }
+
+
+
+    public async Task ModificarSistema()
+    {
+        if (!await Validar())
+        {
+            await sistemasService.Guardar(sistemaModificado);
+
+            Toast.Notify(new(ToastType.Success, "Modificado con exito!", "El sistema se ha modificado"));
+            navigation.NavigateTo("/Sistemas/Index");
         }
         else
         {
-            sistemas = await sistemasService.Listar(t => true);
+            Toast.Notify(new(ToastType.Danger, "Error al modificar el sistema", "Ese sistema ya esta registrado."));
         }
-    }
-
-    private async Task Restablecer()
-    {
-        sistemas = await sistemasService.Listar(p => true);
-        filtro = "";
-        valorFiltro = "";
-
     }
 }
