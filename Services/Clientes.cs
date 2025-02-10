@@ -1,37 +1,86 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using Registro_Tecnicos.DAL;
+using Registro_Tecnicos.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
-namespace Registro_Tecnicos.Models
+namespace Registro_Tecnicos.Services
 {
-    public class Clientes
+    public class ClientesService(IDbContextFactory<Context> DbContextFactory)
     {
 
-        [Key]
+        private async Task<bool> Existe(int ClienteId)
+        {
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            return await context.Clientes.AnyAsync(c => c.ClienteId == ClienteId);
 
-        public int ClienteId { get; set; }
+        }
 
-        [Required(ErrorMessage = "Este campo es requerido")]
+        private async Task<bool> Insertar(Clientes Clientes)
+        {
 
-        public DateTime FechaIngreso { get; set; }
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            context.Clientes.Add(Clientes);
+            return await context.SaveChangesAsync() > 0;
 
-        [Required(ErrorMessage = "Este campo es requerido")]
-        [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "El campo solo puede contener letras y espacios.")]
-        public string Nombres { get; set; }
+        }
 
-        [Required(ErrorMessage = "Este campo es requerido")]
-        public string Direccion { get; set; }
 
-        [Required(ErrorMessage = "Este campo es requerido")]
-        [RegularExpression(@"^\d+$", ErrorMessage = "El campo solo puede contener números.")]
+        public async Task<bool> Guardar(Clientes Clientes)
+        {
+            if (!await Existe(Clientes.ClienteId))
+            {
+                return await Insertar(Clientes);
+            }
+            else
+            {
+                return await Modificar(Clientes);
+            }
+        }
 
-        public int RNC { get; set; }
 
-        [Required(ErrorMessage = "Este campo es requerido")]
-        [RegularExpression(@"^\d+$", ErrorMessage = "El campo solo puede contener números.")]
-        public decimal LimiteCredito { get; set; }
 
-        [ForeignKey("TecnicoId")]
-        public int TecnicoId { get; set; }
+        private async Task<bool> Modificar(Clientes Clientes)
+        {
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            context.Update(Clientes);
+            return await context.SaveChangesAsync() > 0;
+
+        }
+
+        public async Task<Clientes?> Buscar(int ClienteId)
+        {
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            return await context.Clientes
+                .FirstOrDefaultAsync(c => c.ClienteId == ClienteId);
+        }
+
+        public async Task<bool> Eliminar(int ClienteId)
+        {
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            return await context.Clientes.Where(c => c.ClienteId == ClienteId)
+                .ExecuteDeleteAsync() > 0;
+        }
+
+        public async Task<List<Clientes>> Listar(Expression<Func<Clientes, bool>> criterio)
+        {
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            return await context.Clientes.Where(criterio).ToListAsync();
+
+        }
+
+
+        public async Task<Clientes?> BuscarNombres(string Nombres)
+        {
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            return await context.Clientes
+                .FirstOrDefaultAsync(e => e.Nombres == Nombres);
+        }
+
+        public async Task<Clientes?> BuscarRNC(int RNC)
+        {
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            return await context.Clientes
+                .FirstOrDefaultAsync(e => e.RNC == RNC);
+        }
     }
 }
